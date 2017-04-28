@@ -22,9 +22,11 @@ import session from 'app/services/session';
 import Terminal from 'app/lib/term/terminal';
 import termGetters from 'app/flux/terminal/getters';
 import Indicator from './../indicator.jsx';
-import { initTerminal, startNew, close, updateSessionFromEventStream } from 'app/flux/terminal/actions';
+import { initTerminal, startNew, close } from 'app/flux/terminal/actions';
+import { updateSession } from 'app/flux/sessions/actions';
 import { openPlayer } from 'app/flux/player/actions';
 import PartyList from './terminalPartyList';
+import { EventTypeEnum } from 'app/lib/term/enums';
 
 const TerminalHost = React.createClass({
 
@@ -101,12 +103,36 @@ const TtyTerminal = React.createClass({
       tty: {
         serverId, login, sid, token, url
       },     
-     el: this.refs.container
+      el: this.refs.container
     }
     
     this.terminal = new Terminal(options);
-    this.terminal.ttyEvents.on('data', updateSessionFromEventStream(siteId));
+    this.terminal.ttyEvents.on('data', this.receiveEvents.bind(this));
     this.terminal.open();
+  },
+
+  receiveEvents(data) {        
+    
+    data.events.reverse().every(item => {
+      let { event, size } = item;
+
+      if (event === EventTypeEnum.END) {
+        close();
+      }
+
+      if (event === EventTypeEnum.RESIZE) {
+        let [w, h] = size.split(':');        
+        this.terminal.resize(Number(w), Number(h));
+        return false;
+      }
+
+      return true;
+    });
+
+    updateSession({      
+      siteId: this.props.siteId,
+      json: data.session      
+    })                                  
   },
 
   componentWillUnmount() {

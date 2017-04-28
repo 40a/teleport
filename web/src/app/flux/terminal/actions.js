@@ -17,10 +17,7 @@ import reactor from 'app/reactor';
 import session from 'app/services/session';
 import api from 'app/services/api';
 import cfg from 'app/config';
-//import getters from './getters';
-import { updateSession } from './../sessions/actions';
 import sessionGetters from './../sessions/getters';
-//import {showError} from 'app/flux/notifications/actions';
 
 const logger = require('app/lib/logger').create('Current Session');
 
@@ -100,23 +97,7 @@ const actions = {
   close() {    
     reactor.dispatch(TLPT_TERMINAL_CLOSE);    
     session.getHistory().push(cfg.routes.nodes);    
-  },
-
-  updateSessionFromEventStream(siteId) {
-    return data => {
-      data.events.forEach(item => {
-        if (item.event === 'session.end') {
-          actions.close();
-        }
-      })
-      
-      updateSession({
-        siteId: siteId,
-        json: data.session
-      });
-    }
   }
-
 }
 
 export default actions;

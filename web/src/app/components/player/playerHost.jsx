@@ -170,8 +170,7 @@ class Term extends Terminal{
     if(cols === this.cols && rows === this.rows){
       return;
     }
-        
-    super.reset();
+            
     super.resize(cols, rows);    
     $(this._el).perfectScrollbar('update');
   }

@@ -38,6 +38,8 @@ module.exports = {
     sourceMapFilename: '[name].map'
   },
 
+  noParse: [ /xterm.js$/ ],
+  
   resolve: {
 
     alias: {

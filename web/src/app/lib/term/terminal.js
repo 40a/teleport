@@ -97,11 +97,11 @@ class TtyTerminal {
     window.removeEventListener('resize', this.debouncedResize);
   }
 
-  reset() {    
+  reset() {        
     this.term.reset()
   }
 
-  resize(cols, rows) {
+  resize(cols, rows) {    
     // if not defined, use the size of the container
     if(!isNumber(cols) || !isNumber(rows)){
       let dim = this._getDimensions();
@@ -114,22 +114,32 @@ class TtyTerminal {
     }
 
     this.cols = cols;
-    this.rows = rows;
-    this.term.resize(this.cols, this.rows);
+    this.rows = rows;    
+    try {      
+      this.term.resize(this.cols, this.rows);  
+    } catch (err) {      
+      logger.info({
+        w: this.cols,
+        h: this.rows,
+        text: 'failed to resize xtermjs',        
+        err
+      });
+     
+      this.term.reset();  
+    }       
   }
 
   _processData(data){
-    try{      
-      data = this._ensureScreenSize(data);
-      this.term.write(data);
-    }catch(err){      
-      logger.error({
-        w: this.cols,
-        h: this.rows,
-        text: 'failed to resize termjs',
+    try {                  
+      this.term.write(data);                    
+    } catch (err) {            
+      logger.error({        
+        text: 'failed to process received data',
         data: data,
         err
       });
+      // reset xtermjs so it can recover
+      this.term.reset();  
     }
   }
     
@@ -143,32 +153,6 @@ class TtyTerminal {
                     
     displayText = `\x1b[31m${displayText}\x1b[m\r\n`;
     this.term.write(displayText)
-  }
-
-  _ensureScreenSize(data){
-    /**
-    * for better sync purposes, the screen values are inserted to the end of the chunk
-    * with the following format: '\0NUMBER:NUMBER'
-    */
-    let pos = data.lastIndexOf('\0');
-    if(pos !==-1){
-      let length = data.length - pos;
-      if(length  > 2 && length < 10){
-        let tmp = data.substr(pos+1);
-        let [w, h] = tmp.split(':');
-        if($.isNumeric(w) && $.isNumeric(h)){
-          w = Number(w);
-          h = Number(h);
-
-          if(w < 500 && h < 500){
-            data = data.slice(0, pos);
-            this.resize(w, h)
-          }
-        }
-      }
-    }
-
-    return data;
   }
 
   _disconnect() {    
@@ -194,12 +178,10 @@ class TtyTerminal {
     let { sid, url } = this.ttyParams;
     let reqData = { terminal_params: { w, h } };
     
-    logger.info('request new screen size', `w:${w} and h:${h}`);
-
+    logger.info('requesting new screen size', `w:${w} and h:${h}`);    
     this.resize(w, h);
     api.put(`${url}/sessions/${sid}`, reqData)
-      .done(()=> logger.info('new screen size requested'))
-      .fail((err)=> logger.error('request new screen size', err));
+      .fail(err => logger.error('request new screen size', err));
   }
 
   _getDimensions(){

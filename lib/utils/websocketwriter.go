@@ -76,7 +76,7 @@ func NewWebSockWrapper(ws *websocket.Conn, m WebSocketMode) *WebSockWrapper {
 //
 // It replaces raw Write() with "Message.Send()"
 func (w *WebSockWrapper) Write(data []byte) (n int, err error) {
-	p := w.GetPrefix()
+	/*p := w.GetPrefix()
 	if len(p) > 0 {
 		if w.mode == WebSocketBinaryMode {
 			websocket.Message.Send(w.ws, p)
@@ -85,18 +85,18 @@ func (w *WebSockWrapper) Write(data []byte) (n int, err error) {
 			utf8, _ = w.encoder.String(string(p))
 			websocket.Message.Send(w.ws, utf8)
 		}
-	}
+	}*/
 
 	n = len(data)
-	if w.mode == WebSocketBinaryMode {
+	/*if w.mode == WebSocketBinaryMode {
 		// binary send:
 		err = websocket.Message.Send(w.ws, data)
 		// text send:
-	} else {
-		var utf8 string
-		utf8, err = w.encoder.String(string(data))
-		err = websocket.Message.Send(w.ws, utf8)
-	}
+	} else {*/
+	var utf8 string
+	utf8, err = w.encoder.String(string(data))
+	err = websocket.Message.Send(w.ws, utf8)
+	//}
 	if err != nil {
 		log.Error(err)
 		n = 0
